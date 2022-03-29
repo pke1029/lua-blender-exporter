@@ -1,15 +1,15 @@
 # Blender addon for exporting to LUA syntax 
 
-An addon for Blender to export meshes to Lua format
+An addon for Blender to export meshes and materials to Lua format
 
 ## Format
-Format of the 
+Format follows a similar structure as a Wavefront OBJ file: 
 ```
 Cube = {
-    verts = {{0,0,0},{0,0,1},{0,1,0}...},
-    faces = {},
-    cols = {},
-    fcols = {},
+    verts = {{0,0,0},{0,0,1},{0,1,0},...},
+    faces = {{1,5,7,3},{4,3,7,8},...},
+    cols = {{175,187,227}},
+    fcols = {1,1,1,1,1,1},
 }
 ```
 
