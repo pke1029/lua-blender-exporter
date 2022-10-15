@@ -25,7 +25,7 @@ def float2string(x, p):
 
 
 def write_verts(obj, p=2):
-	faces = obj.mesh.polygons[:]
+	verts = obj.data.vertices[:]
 	l = "\tverts = {"
 	for v in verts:
 		v = [v.co[1], v.co[2], v.co[0]]
@@ -35,7 +35,7 @@ def write_verts(obj, p=2):
 
 
 def write_faces(obj):
-	faces = obj.mesh.polygons[:]
+	faces = obj.data.polygons[:]
 	l = "\tfaces = {"
 	for f in faces:
 		l += '{' + ','.join(str(i+1) for i in f.vertices) + '},'
@@ -61,13 +61,13 @@ def write_cols(obj):
 
 
 def write_fcols(obj):
-	faces = obj.mesh.polygons[:]
+	faces = obj.data.polygons[:]
 	l = '\tfcols = {' + ','.join(str(f.material_index+1) for f in faces) + '},\n'
 	return l
 
 
 def write_fcenters(obj, p=2):
-	faces = obj.mesh.polygons[:]
+	faces = obj.data.polygons[:]
 	l = "\tfcenters = {" 
 	for f in faces:
 		v = [f.center[1], f.center[2], f.center[0]]
@@ -77,17 +77,13 @@ def write_fcenters(obj, p=2):
 
 
 def write_fnormals(obj, p=2):
-	faces = obj.mesh.polygons[:]
+	faces = obj.data.polygons[:]
 	l = "\tfnormals = {" 
 	for f in faces:
 		v = [f.normal[1], f.normal[2], f.normal[0]]
 		l += '{' + ','.join(float2string(i, p) for i in v) + '},'
 	l += "},\n"
 	return l
-
-
-def write_uvs(obj):
-	mesh = obj.data
 	
 
 
