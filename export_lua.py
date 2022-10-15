@@ -3,7 +3,7 @@
 bl_info = {
 	"name": "Export LUA format",
 	"author": "Kenny Pang (pke1029)",
-	"version": (0, 0, 1),
+	"version": (0, 0, 2),
 	"blender": (2, 80, 0),
 	"location": "File > Import-Export",
 	"description": "Export mesh data to Lua format",
@@ -13,61 +13,119 @@ bl_info = {
 	"category": "Import-Export"}
 
 
-def f2s(x):
-    return ('%.2f' % x).rstrip('0').rstrip('.')
+# TODO
+# export scene/selected object
+# export uvs, face normals
+# bake texture
+# smart materials (choose between texture or flat color)
+
+
+def float2string(x, p):
+    return ('%.*f' % (p, x)).rstrip('0').rstrip('.')
+
+
+def write_verts(obj, p=2):
+	faces = obj.mesh.polygons[:]
+	l = "\tverts = {"
+	for v in verts:
+		v = [v.co[1], v.co[2], v.co[0]]
+		l += '{' + ','.join(float2string(i, p) for i in v) + '},'
+	l += "},\n"
+	return l
+
+
+def write_faces(obj):
+	faces = obj.mesh.polygons[:]
+	l = "\tfaces = {"
+	for f in faces:
+		l += '{' + ','.join(str(i+1) for i in f.vertices) + '},'
+	l += "},\n"
+	return l
+
+
+def write_cols(obj):
+	l = "\tcols = {"
+	materials = [i.material for i in obj.material_slots]
+	for mat in materials:
+		nodes = [i.type for i in mat.node_tree.nodes]
+		if 'RGB' in nodes:
+			c = mat.node_tree.nodes['RGB'].outputs[0].default_value[0:3]
+		elif 'EMISSION' in nodes:
+			c = mat.node_tree.nodes['EMISSION'].inputs[0].default_value[0:3]
+		else:
+			c = (0.0, 0.0, 0.0)
+		rgb = tuple(round(255*i**(1.0/2.2)) for i in c) 
+		l += '{%d,%d,%d},' % rgb
+	l += "},\n"
+	return l
+
+
+def write_fcols(obj):
+	faces = obj.mesh.polygons[:]
+	l = '\tfcols = {' + ','.join(str(f.material_index+1) for f in faces) + '},\n'
+	return l
+
+
+def write_fcenters(obj, p=2):
+	faces = obj.mesh.polygons[:]
+	l = "\tfcenters = {" 
+	for f in faces:
+		v = [f.center[1], f.center[2], f.center[0]]
+		l += '{' + ','.join(float2string(i, p) for i in v) + '},'
+	l += "},\n"
+	return l
+
+
+def write_fnormals(obj, p=2):
+	faces = obj.mesh.polygons[:]
+	l = "\tfnormals = {" 
+	for f in faces:
+		v = [f.normal[1], f.normal[2], f.normal[0]]
+		l += '{' + ','.join(float2string(i, p) for i in v) + '},'
+	l += "},\n"
+	return l
+
+
+def write_uvs(obj):
+	mesh = obj.data
+	
 
 
 import bpy
-from bpy_extras.io_utils import (ExportHelper)
+from bpy_extras.io_utils import ExportHelper
+from bpy.props import BoolProperty, IntProperty
 
 
 class ExportLUA(bpy.types.Operator, ExportHelper):
-	"""Save a Wavefront LUA File"""
+	"""Save a LUA File"""
 
 	bl_idname = "export_scene.lua"
 	bl_label = "Export LUA"
 
 	filename_ext = ".lua"
 
+	use_selection: BoolProperty(name="Selection Only", description="Export selected objects only", default=True)
+	precision: IntProperty(name="Precision", description="Precision for floating point values", default=2, min=1, max=6)
+
 	def execute(self, context):
 		filepath = self.filepath
 		f = open(filepath, 'w')
+		fw = f.write
+
 		obj = context.selected_objects[0]
-		f.write(obj.name + ' = {\n')
-		mesh = obj.data
+		fw(obj.name + ' = {\n')
+
+		fw(write_verts(obj, p=self.precision))
+		fw(write_faces(obj))
+		fw(write_cols(obj))
+		fw(write_fcols(obj))
 		
-		# vertices
-		verts = "\tverts = {"
-		mesh_verts = mesh.vertices[:]
-		for v in mesh_verts:
-			# verts += '{%.3f,%.3f,%.3f},' % (v.co[1], v.co[2], v.co[0])
-			verts += '{' + f2s(v.co[1]) + ',' + f2s(v.co[2]) + ',' + f2s(v.co[0]) + '},'
-		verts += "},\n"
-		f.write(verts)
-
-		# faces
-		faces = "\tfaces = {"
-		mesh_faces = mesh.polygons[:]
-		for p in mesh_faces:
-			faces += '{' + ','.join(str(i+1) for i in p.vertices) + '},'
-		faces += "},\n"
-		f.write(faces)
-
-		# colors
-		cols = "\tcols = {"
-		materials = obj.material_slots
-		for c in materials:
-			cols += '{%.4f,%.4f,%.4f},' % c.material.node_tree.nodes.active.outputs[0].default_value[0:3]
-		cols += "},\n"
-		f.write(cols)
-
-		# face colors
-		fcols = '\tfcols = {' + ','.join(str(p.material_index+1) for p in mesh_faces) + '},\n'
-		f.write(fcols)
-
-		f.write('}')
+		fw('}')
 		f.close()
 		return {'FINISHED'}
+
+	# def draw(self, context):
+		# pass
 
 
 def register():
