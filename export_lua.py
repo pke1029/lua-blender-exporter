@@ -51,7 +51,7 @@ def write_cols(obj):
 		if 'RGB' in nodes:
 			c = mat.node_tree.nodes['RGB'].outputs[0].default_value[0:3]
 		elif 'EMISSION' in nodes:
-			c = mat.node_tree.nodes['EMISSION'].inputs[0].default_value[0:3]
+			c = mat.node_tree.nodes['Emission'].inputs[0].default_value[0:3]
 		else:
 			c = (0.0, 0.0, 0.0)
 		rgb = tuple(round(255*i**(1.0/2.2)) for i in c) 
