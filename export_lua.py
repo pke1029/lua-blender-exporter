@@ -3,7 +3,7 @@
 bl_info = {
 	"name": "Export LUA format",
 	"author": "Kenny Pang (pke1029)",
-	"version": (0, 0, 2),
+	"version": (0, 0, 3),
 	"blender": (2, 80, 0),
 	"location": "File > Import-Export",
 	"description": "Export mesh data to Lua format",
@@ -108,15 +108,14 @@ class ExportLUA(bpy.types.Operator, ExportHelper):
 		f = open(filepath, 'w')
 		fw = f.write
 
-		obj = context.selected_objects[0]
-		fw(obj.name + ' = {\n')
+		for obj in context.selected_objects:
+			fw(obj.name + ' = {\n')
+			fw(write_verts(obj, p=self.precision))
+			fw(write_faces(obj))
+			fw(write_cols(obj))
+			fw(write_fcols(obj))
+			fw('}\n')
 
-		fw(write_verts(obj, p=self.precision))
-		fw(write_faces(obj))
-		fw(write_cols(obj))
-		fw(write_fcols(obj))
-		
-		fw('}')
 		f.close()
 		return {'FINISHED'}
 
